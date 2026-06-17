@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <!--
 =======================================================================
@@ -11,7 +12,7 @@ PURPOSE:
 FOLDER STRUCTURE (GitHub repo root):
   index.html                  ← this file (hub page)
   burns/
-    report.html               ← Chase Burns report (multi-start)
+    report.html               ← Chase Burns report (multi-appearance)
   [lastname]/
     report.html               ← any additional pitcher
 
@@ -31,9 +32,9 @@ HOW TO ADD A NEW PITCHER:
   5. Add a pitcher card to the PITCHERS array below in this file
   6. Re-upload index.html
 
-HOW TO ADD A NEW START TO AN EXISTING PITCHER:
+HOW TO ADD A NEW APPEARANCE TO AN EXISTING PITCHER:
   1. Bring the new game CSV + their current report.html to Claude
-  2. Claude adds the new start to the existing file (preserving all prior starts)
+  2. Claude adds the new appearance to the existing file (preserving all prior appearances)
   3. Replace the old report.html in their folder with the updated one
   4. No changes needed to index.html
 
@@ -49,7 +50,7 @@ PITCHER CARD DATA FORMAT (edit the PITCHERS array in the script below):
     teamFull: "Cincinnati Reds", // full team name
     throws: "R",                 // R or L
     folder: "burns",             // subfolder name (matches folder in repo)
-    starts: [                    // list of starts for display
+    starts: [                    // list of appearances for display
       { date: "Jun 9, 2026",  opp: "SD",  result: "ND", ip: "5 1/3", era: null },
       { date: "Jun 15, 2026", opp: "NYM", result: "W",  ip: "5",     era: null }
     ],
@@ -145,7 +146,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 }
 .card-team{font-size:.7rem;color:var(--dim);margin-top:3px}
 
-/* Start history */
+/* Appearance history */
 .starts-section{margin-top:12px}
 .starts-label{font-size:.58rem;font-weight:700;color:var(--dim);
   text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px}
@@ -165,7 +166,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 .res-l{background:#7f1d1d;color:#fca5a5}
 .res-nd{background:#1e3a5f;color:#93c5fd}
 
-/* No starts placeholder */
+/* No appearances placeholder */
 .no-starts{font-size:.68rem;color:var(--dim);font-style:italic;padding:6px 0}
 
 /* Card footer */
@@ -260,7 +261,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
   <div class="hub-sub">Statcast pitch-by-pitch scouting reports &#xB7; Powered by Claude</div>
   <div class="hub-meta">
     <div class="hub-stat"><strong id="totalPitchers">0</strong> pitchers</div>
-    <div class="hub-stat"><strong id="totalStarts">0</strong> starts documented</div>
+    <div class="hub-stat"><strong id="totalApps">0</strong> appearances documented</div>
     <div class="hub-stat" id="lastUpdated"></div>
   </div>
 </header>
@@ -378,7 +379,7 @@ function buildCard(p){
   var bandCls = p.throws === "L" ? "lh" : "rh";
   var startsHTML = "";
   if(p.starts && p.starts.length > 0){
-    startsHTML = '<div class="starts-label">Starts</div><div class="starts-list">';
+    startsHTML = '<div class="starts-label">Appearances</div><div class="starts-list">';
     p.starts.slice().reverse().forEach(function(s){
       var resCls = s.result === "W" ? "res-w" : s.result === "L" ? "res-l" : "res-nd";
       startsHTML += '<div class="start-row">';
@@ -390,12 +391,12 @@ function buildCard(p){
     });
     startsHTML += '</div>';
   } else {
-    startsHTML = '<div class="no-starts">No starts logged yet</div>';
+    startsHTML = '<div class="no-starts">No appearances logged yet</div>';
   }
 
   var url = p.folder + "/report.html";
 
-  return '<a class="pitcher-card" href="'+url+'">'    +'<div class="card-band '+bandCls+'"></div>'    +'<div class="card-body">'      +'<div class="card-top">'        +'<div>'          +'<div class="card-name">'+p.name+'</div>'          +'<div class="card-team">'+p.teamFull+' &#xB7; '+p.throws+'HP</div>'        +'</div>'        +'<div class="card-pos-badge">'+p.pos+'</div>'      +'</div>'      +'<div class="starts-section">'+startsHTML+'</div>'    +'</div>'    +'<div class="card-footer">'      +'<span class="view-link">View Full Report &#x2192;</span>'      +'<span class="card-arrow">'+p.starts.length+' start'+( p.starts.length!==1?"s":"")+'</span>'    +'</div>'  +'</a>';
+  return '<a class="pitcher-card" href="'+url+'">'    +'<div class="card-band '+bandCls+'"></div>'    +'<div class="card-body">'      +'<div class="card-top">'        +'<div>'          +'<div class="card-name">'+p.name+'</div>'          +'<div class="card-team">'+p.teamFull+' &#xB7; '+p.throws+'HP</div>'        +'</div>'        +'<div class="card-pos-badge">'+p.pos+'</div>'      +'</div>'      +'<div class="starts-section">'+startsHTML+'</div>'    +'</div>'    +'<div class="card-footer">'      +'<span class="view-link">View Full Report &#x2192;</span>'      +'<span class="card-arrow">'+p.starts.length+' appearance'+( p.starts.length!==1?"s":"")+'</span>'    +'</div>'  +'</a>';
 }
 
 function applyFilters(){
@@ -438,7 +439,7 @@ function buildMeta(){
   var total = PITCHERS.length;
   var starts = PITCHERS.reduce(function(s,p){ return s + (p.starts ? p.starts.length : 0); }, 0);
   document.getElementById("totalPitchers").textContent = total;
-  document.getElementById("totalStarts").textContent = starts;
+  document.getElementById("totalApps").textContent = starts;
   // Last updated = today
   var now = new Date();
   var months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
