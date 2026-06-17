@@ -284,10 +284,10 @@ table.ptbl tr.detail-row td{padding:0;border-bottom:1px solid var(--bdr)}
     <div class="pp-chart-title">Pitch Movement Profile &mdash; All Appearances (Pitcher&rsquo;s POV)</div>
     <div class="career-filters">
       <label class="career-filter-label">Year
-        <select class="career-select" id="careerYearSelect" onchange="onCareerFilterChange()"></select>
+        <select class="career-select" id="careerYearSelect" onchange="onCareerFilterChange('careerYearSelect')"></select>
       </label>
       <label class="career-filter-label">Appearance
-        <select class="career-select" id="careerStartSelect" onchange="onCareerFilterChange()"></select>
+        <select class="career-select" id="careerStartSelect" onchange="onCareerFilterChange('careerStartSelect')"></select>
       </label>
     </div>
     <svg class="pp-svg" id="careerMovPlot" viewBox="0 0 560 420"></svg>
@@ -1196,9 +1196,11 @@ function buildCareerFilterOptions(){
   yearSel._rebuildStartOptions = rebuildStartOptions;
 }
 
-function onCareerFilterChange(){
-  const yearSel = document.getElementById('careerYearSelect');
-  if(yearSel && yearSel._rebuildStartOptions) yearSel._rebuildStartOptions();
+function onCareerFilterChange(changedId){
+  if(changedId === 'careerYearSelect'){
+    const yearSel = document.getElementById('careerYearSelect');
+    if(yearSel && yearSel._rebuildStartOptions) yearSel._rebuildStartOptions();
+  }
   drawCareerMovementPlot();
 }
 
