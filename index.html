@@ -37,6 +37,7 @@ PASSWORD: Hash stored below. To change:
   --txt:#e2e8f0;--muted:#94a3b8;--dim:#64748b;
   --red:#ef4444;--grn:#22c55e;--yel:#f59e0b;--blu:#3b82f6;
   --good-bg:#14532d;--good-fg:#4ade80;
+  --copper:#b87333;
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth}
@@ -67,9 +68,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 
 /* HEADER */
 .hub-header{background:linear-gradient(135deg,#1a2744 0%,#0f172a 100%);
-  border-bottom:2px solid var(--red);padding:22px 24px 18px}
+  border-bottom:2px solid #b87333;padding:22px 24px 18px}
 .hub-title{font-size:clamp(1.2rem,4vw,1.8rem);font-weight:900;color:#f1f5f9;letter-spacing:-.02em}
-.hub-title span{color:var(--red)}
+.hub-title span{color:#b87333}
 .hub-sub{font-size:clamp(.65rem,2vw,.8rem);color:var(--muted);margin-top:5px}
 .hub-meta{display:flex;align-items:center;gap:16px;margin-top:12px;flex-wrap:wrap}
 .hub-stat{font-size:.72rem;color:var(--dim)}
@@ -90,7 +91,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
   border-radius:20px;padding:5px 13px;font-size:.68rem;font-weight:600;
   cursor:pointer;-webkit-tap-highlight-color:transparent;transition:all .15s;
   white-space:nowrap;min-height:34px;display:flex;align-items:center}
-.fpill.active{background:var(--red);border-color:var(--red);color:#fff}
+.fpill.active{background:#b87333;border-color:#b87333;color:#fff}
 .fpill:hover:not(.active){border-color:var(--blu);color:#93c5fd}
 
 /* GRID */
@@ -377,13 +378,13 @@ function buildCard(p){
 
   var appsHTML = '';
   if(p.appearances && p.appearances.length > 0){
-    appsHTML = '<div class="apps-label">Appearances</div><div class="apps-list">';
-    p.appearances.slice().reverse().forEach(function(a){
-      /* Extract short opponent from sub e.g. "vs San Diego Padres · ..." -> "vs San Diego Padres" */
-      var opp = a.sub ? a.sub.split(' \u00b7 ')[0].trim() : '';
-      appsHTML += '<div class="app-row">'        +'<span class="app-date">'+a.date+'</span>'        +'<span class="app-opp">'+opp+'</span>'        +'</div>';
-    });
-    appsHTML += '</div>';
+    var latest = p.appearances[p.appearances.length - 1];
+    var opp = latest.sub ? latest.sub.split(' \u00b7 ')[0].trim() : '';
+    appsHTML = '<div class="apps-label">Most Recent</div>'
+      +'<div class="apps-list"><div class="app-row">'
+      +'<span class="app-date">'+latest.date+'</span>'
+      +'<span class="app-opp">'+opp+'</span>'
+      +'</div></div>';
   } else {
     appsHTML = '<div class="no-apps">No appearances logged yet</div>';
   }
