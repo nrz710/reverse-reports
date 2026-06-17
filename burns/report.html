@@ -76,6 +76,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 /* ── REPORT PANEL ── */
 .report-wrap{display:none}
 .report-wrap.open{display:block}
+.career-chart{padding:0 16px 14px}
+.career-chart.hidden{display:none}
+.career-filters{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+.career-filter-label{display:flex;flex-direction:column;gap:3px;font-size:.6rem;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.06em}
+.career-select{background:#16213d;color:#e2e8f0;border:1px solid #334155;border-radius:6px;padding:6px 9px;font-size:.72rem;font-weight:600;font-family:system-ui;min-height:34px;-webkit-tap-highlight-color:transparent}
+.career-select:focus{outline:2px solid #b87333;outline-offset:1px}
 .report-inner{display:flex;flex-direction:column}
 
 /* ── SUMMARY STATS BAR ── */
@@ -272,6 +278,22 @@ table.ptbl tr.detail-row td{padding:0;border-bottom:1px solid var(--bdr)}
   </div>
 </header>
 
+<!-- CAREER MOVEMENT PROFILE: shown by default, hides when a start is selected -->
+<div class="career-chart" id="careerChart">
+  <div class="pp-chart-full">
+    <div class="pp-chart-title">Pitch Movement Profile &mdash; All Appearances (Pitcher&rsquo;s POV)</div>
+    <div class="career-filters">
+      <label class="career-filter-label">Year
+        <select class="career-select" id="careerYearSelect" onchange="onCareerFilterChange()"></select>
+      </label>
+      <label class="career-filter-label">Appearance
+        <select class="career-select" id="careerStartSelect" onchange="onCareerFilterChange()"></select>
+      </label>
+    </div>
+    <svg class="pp-svg" id="careerMovPlot" viewBox="0 0 560 420"></svg>
+  </div>
+</div>
+
 <!-- REPORT PANEL: shown when a date is selected -->
 <div class="report-wrap" id="reportWrap">
   <div class="report-inner">
@@ -451,6 +473,7 @@ function selectStart(startId, row) {
     if(!isMobile()) renderDetail();
     setTimeout(()=>{ wrap.scrollIntoView({behavior:'smooth',block:'start'}); }, 80);
   }
+  updateCareerChartVisibility();
 }
 
 function buildInningJump() {
@@ -1116,6 +1139,115 @@ function drawMovementPlot(){
   const el=document.getElementById('movPlot');
   el.innerHTML=leg+axes+dots;
 }
+
+/* ══════════════════════════════════════════
+   CAREER (ALL-STARTS) MOVEMENT PROFILE
+   Separate from the single-start Pitch Profile modal above —
+   aggregates across every start in ALL_STARTS, with Year/Appearance filters.
+   ══════════════════════════════════════════ */
+
+function getStartYear(startId){
+  var m = startId.match(/^start-(\d{4})-/);
+  return m ? m[1] : null;
+}
+
+function getAggregatePitchData(yearFilter, startFilter){
+  const out=[];
+  Object.keys(ALL_STARTS).forEach(function(startId){
+    if(startFilter && startFilter!=='all' && startId!==startFilter) return;
+    if(yearFilter && yearFilter!=='all' && getStartYear(startId)!==yearFilter) return;
+    (ALL_STARTS[startId]||[]).forEach(function(pa){
+      pa.pitches.forEach(function(p){
+        if(p.hb!==null && p.ivb!==null && p.release_height!==null && p.extension!==null){
+          var copy = Object.assign({}, p);
+          copy.rel_pos_x = p.rel_pos_x != null ? p.rel_pos_x : null;
+          copy.rel_pos_z = p.rel_pos_z != null ? p.rel_pos_z : null;
+          out.push(copy);
+        }
+      });
+    });
+  });
+  return out;
+}
+
+function buildCareerFilterOptions(){
+  const yearSel = document.getElementById('careerYearSelect');
+  const startSel = document.getElementById('careerStartSelect');
+  if(!yearSel || !startSel) return;
+
+  let yearHtml = '<option value="all">All Years</option>';
+  SEASONS.forEach(function(season){
+    yearHtml += `<option value="${season.year}">${season.year}</option>`;
+  });
+  yearSel.innerHTML = yearHtml;
+
+  function rebuildStartOptions(){
+    const selectedYear = yearSel.value;
+    let startHtml = '<option value="all">All Appearances</option>';
+    SEASONS.forEach(function(season){
+      if(selectedYear!=='all' && String(season.year)!==selectedYear) return;
+      season.starts.forEach(function(start){
+        startHtml += `<option value="${start.id}">${start.date}</option>`;
+      });
+    });
+    startSel.innerHTML = startHtml;
+  }
+  rebuildStartOptions();
+  yearSel._rebuildStartOptions = rebuildStartOptions;
+}
+
+function onCareerFilterChange(){
+  const yearSel = document.getElementById('careerYearSelect');
+  if(yearSel && yearSel._rebuildStartOptions) yearSel._rebuildStartOptions();
+  drawCareerMovementPlot();
+}
+
+function drawCareerMovementPlot(){
+  const yearSel = document.getElementById('careerYearSelect');
+  const startSel = document.getElementById('careerStartSelect');
+  const yearFilter = yearSel ? yearSel.value : 'all';
+  const startFilter = startSel ? startSel.value : 'all';
+
+  const W=560,H=420,ML=52,MR=20,MT=20,MB=48;
+  const pitches=getAggregatePitchData(yearFilter, startFilter);
+  const RANGE=25;
+  const {g:axes,DW,DH}=drawScatterAxes(document.getElementById('careerMovPlot'),W,H,-RANGE,RANGE,-RANGE,RANGE,
+    'Horizontal Break (inches)','Induced Vertical Break (inches)',ML,MR,MT,MB);
+  function px(hb){return ML+DW*((-hb)-(-RANGE))/(2*RANGE);}
+  function py(ivb){return MT+DH*(1-(ivb-(-RANGE))/(2*RANGE));}
+
+  const types=[...new Set(pitches.map(p=>p.type))];
+
+  let dots='';
+  pitches.forEach(p=>{
+    const x=px(p.hb),y=py(p.ivb);
+    const c=PP_COLORS[p.type]||'#94a3b8';
+    dots+=`<circle cx="${x}" cy="${y}" r="5" fill="${c}" opacity="0.78" stroke="${c}" stroke-width="0.5"/>`;
+  });
+
+  let leg='';
+  let lx=ML;
+  types.forEach(t=>{
+    const c=PP_COLORS[t]||'#94a3b8';
+    const n=PP_NAMES[t]||t;
+    leg+=`<circle cx="${lx+5}" cy="11" r="5" fill="${c}" opacity="0.85"/>`;
+    leg+=`<text x="${lx+14}" y="15" font-size="9.5" fill="#cbd5e1" font-family="system-ui">${n}</text>`;
+    lx+=14+n.length*5.8+14;
+  });
+
+  const el=document.getElementById('careerMovPlot');
+  el.innerHTML=leg+axes+dots;
+}
+
+function updateCareerChartVisibility(){
+  const chart = document.getElementById('careerChart');
+  if(!chart) return;
+  chart.classList.toggle('hidden', !!activeStartId);
+}
+
+buildCareerFilterOptions();
+drawCareerMovementPlot();
+updateCareerChartVisibility();
 
 /* ── RELEASE POINT PLOT — pitcher's POV, inches, matching reference image ── */
 function drawReleasePlot(){
